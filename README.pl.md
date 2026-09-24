@@ -128,6 +128,40 @@ Pod spodem wyjścia są na ten czas rozciągnięte do 300 diod, żeby dało się
 w ogóle zaadresować diodę za prawdziwym końcem taśmy — dlatego ten tryb nie
 zmierzy taśmy dłuższej niż 300 diod.
 
+## Jak poznać, która taśma jest która
+
+Pięć taśm w tej lampie jest rozmieszczonych jak oczka na piątce kostki — cztery
+w rogach, jedno w środku — więc sterowanie wygląda tak samo. Nie ma wtedy czego
+pamiętać: suwak w lewym górnym rogu to taśma w lewym górnym rogu.
+
+Pomagają w tym trzy rzeczy:
+
+- **Rozmieść** (nad taśmami) włącza tryb zamiany. Dotykasz dwóch taśm, a one
+  zamieniają się miejscami — aż ekran będzie zgodny z lampą przed Tobą.
+- **Mrugnij** (w panelu koloru danej taśmy) mruga tą jedną taśmą trzy razy na
+  biało, żebyś zobaczył, o którą fizycznie chodzi.
+- **Zmień** (ten sam panel) nadaje jej własną nazwę — „lewa przednia",
+  „kręgosłup", cokolwiek pasuje do Twojej konstrukcji.
+
+Nazwy i pozycje siedzą w `/favs.json` na lampce, obok zapisanych kolorów. Nazwy
+trafiają dodatkowo do samego WLED, więc pokazuje je też wbudowany panel
+i aplikacja na telefon.
+
+## Zapisywanie wyglądu
+
+**+** na końcu rzędu *Sceny* zapisuje wszystko, co jest teraz na ekranie —
+kolor każdej taśmy, efekt, paletę, tempo, intensywność i jasność główną — pod
+nazwą, którą wybierzesz. **Usuń** kasuje Twoje własne wyglądy; sześć
+wbudowanych scen zostaje.
+
+To są własne presety WLED, w slotach od 2 w górę, więc sięgnie po nie także
+aplikacja na telefon i ewentualne fizyczne przyciski. Slot 1 jest
+zarezerwowany dla presetu startowego, który trzyma układ taśm.
+
+Zapisywane są **bez granic segmentów**. Wygląd niesie więc kolory i efekty, ale
+nigdy nie może na nowo zdefiniować długości taśm — zastosowanie wyglądu sprzed
+pół roku nie cofnie taśmy, którą od tego czasu przelutowałeś.
+
 ## Zapisywanie tego, co lubisz
 
 Kolory, efekty i palety można zapisać jako ulubione. W panelu wyboru koloru

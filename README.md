@@ -127,6 +127,41 @@ Underneath, the outputs are temporarily stretched to 300 LEDs so that an LED
 past the real end can be addressed at all — which is also why this mode can't
 measure a strip longer than 300.
 
+## Knowing which strip is which
+
+The five strips in this build sit like the pips on a die's five face — four
+corners and one in the middle — so the controls are laid out the same way.
+There is then nothing to memorise: the fader in the top-left corner is the
+strip in the top-left corner.
+
+Three things help you set that up:
+
+- **Arrange** (above the strips) turns on swap mode. Tap two strips and they
+  trade places, until the screen matches the lamp in front of you.
+- **Blink** (in a strip's colour panel) flashes that one strip white three
+  times, so you can see which physical strip you're looking at.
+- **Rename** (same panel) gives it a name of your own — "front left", "spine",
+  whatever fits your build.
+
+Names and positions live in `/favs.json` on the lamp, alongside the saved
+colours. Names are also pushed to WLED itself, so the stock panel and the phone
+app show them too.
+
+## Saving a look
+
+**+** at the end of the *Scenes* row saves everything on screen right now —
+every strip's colour, the effect, palette, speed, intensity and master
+brightness — under a name you choose. **Remove** deletes your own saved looks;
+the six built-in scenes stay.
+
+These are WLED's own presets, in slots 2 and up, so the phone app and any
+physical buttons can reach them too. Slot 1 is reserved for the boot preset
+that holds the strip layout.
+
+They are saved **without segment bounds**. A look therefore carries colours and
+effects but can never redefine how long the strips are — applying one from six
+months ago won't undo a strip you have since rewired.
+
 ## Saving what you like
 
 Colours, effects and palettes can be kept as favourites. In the colour picker,

@@ -258,6 +258,36 @@ select{
 .chip.add{border-style:dashed;padding-inline:14px}
 .chip.gone{opacity:.45;text-decoration:line-through;cursor:default}
 .chip.del{border-color:var(--dead);color:var(--dead)}
+
+/* ---------- five-on-a-die layout ---------- */
+.dice{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 8px;
+  padding:16px 0 10px;border-top:1px solid var(--line-soft)}
+.dice .ch{padding:0}
+.dice .ch+.ch::before{display:none}
+.dice .fader{height:128px}
+.rack-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-top:16px;border-top:1px solid var(--line-soft)}
+.rack-head+.rack,.rack-head+.dice{border-top:none;padding-top:10px}
+.ch-name{cursor:default}
+.grab{position:absolute;inset:-4px;border-radius:12px;border:1px dashed var(--line);
+  background:rgba(255,180,84,.04);cursor:pointer;z-index:5}
+.grab:hover{border-color:var(--accent-deep)}
+.grab.picked{border:2px solid var(--accent);background:rgba(255,180,84,.14)}
+.arrange-hint{font:11px/1.5 var(--sans);color:var(--dim);padding:4px 0 0}
+.sheet .namerow{display:flex;gap:8px;margin-top:14px}
+.sheet .namerow input{flex:1}
+.sheet .namerow button{padding:0 14px;border-radius:9px;border:1px solid var(--line);
+  font:11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;transition:color .15s,border-color .15s}
+.sheet .namerow button:hover{color:var(--accent);border-color:var(--accent-deep)}
+
+.saverow{display:flex;gap:8px;margin-top:12px}
+.saverow input{flex:1}
+.saverow button{padding:0 16px;border-radius:9px;border:1px solid var(--line);
+  font:11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);white-space:nowrap}
+.saverow button#scOk{background:var(--accent);color:var(--ground);border-color:var(--accent);font-weight:700}
+.chip.muted{opacity:.35;cursor:default}
 </style>
 </head>
 <body>
@@ -301,6 +331,8 @@ select{
     </div>
   </section>
 
+  <div class="rack-head"><span class="eyebrow">Taśmy</span><button class="mini" id="arrangeBtn" aria-pressed="false">Rozmieść</button></div>
+  <p class="arrange-hint" id="arrangeHint" hidden>Dotknij dwóch taśm, żeby zamienić je miejscami i dopasować układ do lampy.</p>
   <section class="rack" id="rack"></section>
 
   <section class="block">
@@ -329,8 +361,9 @@ select{
   </section>
 
   <section class="block">
-    <span class="eyebrow">Sceny</span>
+    <div class="blk-head"><span class="eyebrow">Sceny</span><button class="mini" id="scEdit" hidden aria-pressed="false">Usuń</button></div>
     <div class="chips" id="scenes"></div>
+    <div class="saverow" id="scSave" hidden><input type="text" id="scName" maxlength="24" placeholder="Nazwij ten wygląd" aria-label="Nazwij ten wygląd"><button id="scOk">Zapisz</button><button id="scCancel">Anuluj</button></div>
   </section>
 
   <section class="block">
@@ -379,6 +412,7 @@ select{
     <input type="text" id="hexIn" maxlength="7" spellcheck="false" aria-label="Kolor szesnastkowo">
   </div>
   <div class="kelvin" id="kelvin"></div>
+  <div class="namerow"><input type="text" id="nameIn" maxlength="24" placeholder="Nazwij tę taśmę" aria-label="Nazwij tę taśmę"><button id="nameSave">Zmień</button><button id="blinkBtn">Mrugnij</button></div>
   <div class="favs">
     <div class="favs-head">
       <span>Zapisane kolory</span>
@@ -571,28 +605,48 @@ function render(){
 function buildRack(segs){
   var r = $("rack");
   r.innerHTML = "";
-  r.style.gridTemplateColumns = "repeat(" + Math.max(segs.length,1) + ",minmax(0,1fr))";
-  segs.forEach(function(s, i){
+  var dice = segs.length === 5;
+  r.className = dice ? "dice" : "rack";
+  r.style.gridTemplateColumns = dice ? "repeat(3,minmax(0,1fr))"
+                                     : "repeat(" + Math.max(segs.length,1) + ",minmax(0,1fr))";
+  var order = dice ? favLayout(segs.length) : segs.map(function(_, i){ return i; });
+
+  order.forEach(function(si, pos){
+    var s = segs[si];
     var d = document.createElement("div");
     d.className = "ch";
+    if (dice) {
+      d.style.gridColumn = PIPS[pos][0];
+      d.style.gridRow = PIPS[pos][1];
+    }
     d.innerHTML =
-      '<div class="ch-name">' + (s.n ? esc(s.n) : "Taśma&nbsp;" + (i+1)) + '</div>' +
-      '<button class="swatch" id="sw' + i + '" aria-label="Kolor taśmy ' + (i+1) + '"></button>' +
-      '<div class="fader" id="fd' + i + '" role="slider" tabindex="0" aria-label="Jasność taśmy ' + (i+1) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' +
+      '<div class="ch-name">' + esc(favName(si, s)) + '</div>' +
+      '<button class="swatch" id="sw' + si + '" aria-label="Kolor: ' + esc(favName(si, s)) + '"></button>' +
+      '<div class="fader" id="fd' + si + '" role="slider" tabindex="0" aria-label="Jasność: ' + esc(favName(si, s)) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' +
         '<div class="track"><div class="fill"></div></div><div class="knob"></div>' +
       '</div>' +
-      '<div class="ch-len" id="ln' + i + '"></div>' +
-      '<button class="ch-btn" id="bt' + i + '" aria-pressed="false">WŁ</button>';
+      '<div class="ch-len" id="ln' + si + '"></div>' +
+      '<button class="ch-btn" id="bt' + si + '" aria-pressed="false">WŁ</button>';
     r.appendChild(d);
 
-    $("sw" + i).addEventListener("click", function(){ openPicker(i); });
-    $("bt" + i).addEventListener("click", function(){
-      var seg = live()[i]; if (!seg) return;
+    if (arrange.on) {
+      var g = document.createElement("div");
+      g.className = "grab" + (arrange.pick === pos ? " picked" : "");
+      g.setAttribute("role", "button");
+      g.setAttribute("aria-label", "Przenieś " + esc(favName(si, s)));
+      g.addEventListener("click", function(){ arrangeTap(pos); });
+      d.appendChild(g);
+      return;                       // no channel controls while rearranging
+    }
+
+    $("sw" + si).addEventListener("click", function(){ openPicker(si); });
+    $("bt" + si).addEventListener("click", function(){
+      var seg = live()[si]; if (!seg) return;
       seg.on = !seg.on; render();
       send({ seg:[{ id:seg.id, on:seg.on }] }, true);
     });
-    vSlider($("fd" + i), function(pct){
-      var seg = live()[i]; if (!seg) return;
+    vSlider($("fd" + si), function(pct){
+      var seg = live()[si]; if (!seg) return;
       seg.bri = Math.round(pct/100*255); seg.on = seg.bri > 0; render();
       send({ seg:[{ id:seg.id, bri:seg.bri, on:seg.on }] });
     });
@@ -643,14 +697,7 @@ function buildLists(){
 
   favChips("fx"); favChips("pal");
 
-  var sc = $("scenes"); sc.innerHTML = "";
-  SCENES.forEach(function(s){
-    var b = document.createElement("button");
-    b.className = "chip scene";
-    b.innerHTML = '<span class="sw" style="background:' + hex(s.col) + ';color:' + hex(s.col) + '"></span>' + esc(s.name);
-    b.addEventListener("click", function(){ runScene(s); });
-    sc.appendChild(b);
-  });
+  buildScenes();
 }
 
 function setAllSeg(patch){
@@ -717,7 +764,8 @@ function openPicker(i){
   var seg = live()[i]; if (!seg) return;
   hsv = rgb2hsv.apply(null, segColor(seg));
   if (hsv.v === 0) hsv.v = 1;
-  $("sheetTitle").textContent = "Kolor · " + (seg.n || ("Taśma " + (i+1)));
+  $("sheetTitle").textContent = "Kolor · " + favName(i, seg);
+  $("nameIn").value = favName(i, seg);
   $("sheet").hidden = false; $("scrim").hidden = false;
   svc.width = svc.clientWidth || 340;
   pushColor();
@@ -932,7 +980,7 @@ var FX_DEFAULT  = ["Solid","Breathe","Candle","Candle Multi","Fire 2012","Aurora
                    "Lake","Palette","Twinkle","Glitter","Noise 1","Colortwinkles"];
 var PAL_DEFAULT = ["Default","Fire","Ocean","Forest","Rainbow","Aurora"];
 
-var favs = { cols:null, fx:null, pal:null };
+var favs = { cols:null, fx:null, pal:null, names:null, layout:null };
 var favDel = { cols:false, fx:false, pal:false };
 
 function favLoad(){
@@ -947,19 +995,34 @@ function favLoad(){
 }
 function favApply(d){
   d = d || {};
-  favs.cols = d.cols || [];
-  favs.fx   = d.fx   || FX_DEFAULT.slice();
-  favs.pal  = d.pal  || PAL_DEFAULT.slice();
+  favs.cols   = d.cols || [];
+  favs.fx     = d.fx   || FX_DEFAULT.slice();
+  favs.pal    = d.pal  || PAL_DEFAULT.slice();
+  favs.names  = d.names  || {};
+  favs.layout = d.layout || null;
 }
 function favSave(){
-  var payload = { v:2, cols:favs.cols, fx:favs.fx, pal:favs.pal };
-  try { localStorage.setItem("lumaFavs", JSON.stringify(payload)); } catch (e) {}
-  var body = new FormData();
-  body.append("data", new Blob([JSON.stringify(payload)], { type:"application/json" }),
-              "/favs.json");
-  return fetch(api("/upload"), { method:"POST", body:body }).catch(function(){});
+  var mine = { v:3, cols:favs.cols, fx:favs.fx, pal:favs.pal,
+               names:favs.names || {}, layout:favs.layout || null };
+  try { localStorage.setItem("lumaFavs", JSON.stringify(mine)); } catch (e) {}
+  // Read, merge, write. Another browser may still have an older build of this
+  // page open; a blind overwrite would silently drop every field that build
+  // knows nothing about — which is exactly how strip names got lost once.
+  return jget("/favs.json")
+    .catch(function(){ return {}; })
+    .then(function(cur){
+      var merged = {}, k;
+      for (k in (cur || {})) merged[k] = cur[k];
+      for (k in mine) merged[k] = mine[k];
+      var body = new FormData();
+      body.append("data", new Blob([JSON.stringify(merged)], { type:"application/json" }),
+                  "/favs.json");
+      return fetch(api("/upload"), { method:"POST", body:body });
+    })
+    .catch(function(){});
 }
-function favRenderAll(){ favColors(); favChips("fx"); favChips("pal"); }
+function favRenderAll(){ favColors(); favChips("fx"); favChips("pal");
+  rackBuilt = 0; render(); }
 
 /* --- colours --- */
 function favAddColor(){
@@ -1076,8 +1139,173 @@ $("palEdit").addEventListener("click", function(){ favDel.pal = !favDel.pal; fav
 
 
 
+/* ---------- which strip sits where ---------- */
+/* The strips are arranged like the five pips on a die, so the controls are too:
+   there is then nothing to memorise about which fader is which strip. */
+var PIPS = [[1,1],[3,1],[2,2],[1,3],[3,3]];   // [column, row] in a 3x3 grid
+var arrange = { on:false, pick:null };
+
+function favLayout(n){
+  var l = favs.layout;
+  var ok = l && l.length === n && l.slice().sort(function(a,b){ return a-b; })
+             .every(function(v, i){ return v === i; });
+  if (ok) return l.slice();
+  var d = []; for (var i = 0; i < n; i++) d.push(i);
+  return d;
+}
+function favName(i, seg){
+  var byId = favs.names && favs.names[String(seg.id)];
+  return byId || seg.n || "Taśma " + (i + 1);
+}
+function setName(i, name){
+  var seg = live()[i];
+  if (!seg) return;
+  favs.names = favs.names || {};
+  if (name) favs.names[String(seg.id)] = name;
+  else delete favs.names[String(seg.id)];
+  favSave();
+  // also tell WLED, so the stock panel and the phone app show it too
+  send({ seg:[{ id:seg.id, n:name || ("Strip " + (i + 1)) }] }, true);
+  rackBuilt = 0;
+  render();
+}
+
+/* Flash one strip white so you can see which physical strip it is. */
+var blinking = false;
+function identify(i){
+  var seg = live()[i];
+  if (!seg || blinking) return;
+  blinking = true;
+  var was = { on:seg.on, bri:seg.bri, col:segColor(seg).slice(), fx:seg.fx };
+  var step = 0;
+  var t = setInterval(function(){
+    var lit = step % 2 === 0;
+    jpost("/json/state", { seg:[{ id:seg.id, on:lit, bri:255, fx:0,
+                                  col:[[255,255,255]] }] });
+    if (++step >= 6) {
+      clearInterval(t);
+      setTimeout(function(){
+        jpost("/json/state", { seg:[{ id:seg.id, on:was.on, bri:was.bri,
+                                      fx:was.fx, col:[was.col] }] })
+          .then(function(){ blinking = false; pull(); });
+      }, 260);
+    }
+  }, 260);
+}
+
+function arrangeToggle(){
+  arrange.on = !arrange.on;
+  arrange.pick = null;
+  $("arrangeBtn").setAttribute("aria-pressed", arrange.on ? "true" : "false");
+  $("arrangeHint").hidden = !arrange.on;
+  rackBuilt = 0;
+  render();
+}
+function arrangeTap(pos){
+  if (arrange.pick === null) { arrange.pick = pos; }
+  else if (arrange.pick === pos) { arrange.pick = null; }
+  else {
+    var l = favLayout(live().length);
+    var a = l[arrange.pick]; l[arrange.pick] = l[pos]; l[pos] = a;
+    favs.layout = l;
+    favSave();
+    arrange.pick = null;
+  }
+  rackBuilt = 0;
+  render();
+}
+
+$("arrangeBtn").addEventListener("click", arrangeToggle);
+$("nameSave").addEventListener("click", function(){ setName(pickTarget, $("nameIn").value.trim()); });
+$("nameIn").addEventListener("keydown", function(e){ if (e.key === "Enter") $("nameSave").click(); });
+$("blinkBtn").addEventListener("click", function(){ identify(pickTarget); });
+
+/* ---------- looks you save yourself ---------- */
+/* These are WLED's own presets, in slots 2 and up, so the stock panel and the
+   phone app can use them too. Slot 1 is the boot preset and is left alone.
+   Saved with sb:false, so a look carries colours and effects but never segment
+   bounds: applying one can't redefine how long the strips are. */
+var userPresets = [], scDel = false;
+
+function presetsLoad(){
+  return jget("/presets.json")
+    .then(function(d){
+      userPresets = [];
+      Object.keys(d || {}).forEach(function(k){
+        var n = +k, p = d[k];
+        if (n >= 2 && p && p.n) userPresets.push({ slot:n, name:p.n });
+      });
+      userPresets.sort(function(a, b){ return a.slot - b.slot; });
+    })
+    .catch(function(){ userPresets = []; })
+    .then(buildScenes);
+}
+function freeSlot(){
+  for (var n = 2; n <= 16; n++) {
+    var taken = userPresets.some(function(p){ return p.slot === n; });
+    if (!taken) return n;
+  }
+  return 0;                                   // all sixteen slots in use
+}
+function presetSave(){
+  var name = $("scName").value.trim(), slot = freeSlot();
+  if (!name || !slot) return;
+  $("scSave").hidden = true;
+  jpost("/json/state", { psave:slot, n:name, ib:true, sb:false })
+    .then(function(){ return wait(700); })
+    .then(presetsLoad);
+}
+function presetDel(slot){
+  jpost("/json/state", { pdel:slot })
+    .then(function(){ return wait(500); })
+    .then(presetsLoad);
+}
+function buildScenes(){
+  var sc = $("scenes");
+  if (!sc) return;
+  sc.innerHTML = "";
+  SCENES.forEach(function(s){
+    var b = document.createElement("button");
+    b.className = "chip scene" + (scDel ? " muted" : "");
+    b.innerHTML = '<span class="sw" style="background:' + hex(s.col) +
+                  ';color:' + hex(s.col) + '"></span>' + esc(s.name);
+    b.addEventListener("click", function(){ if (!scDel) runScene(s); });
+    sc.appendChild(b);
+  });
+  userPresets.forEach(function(p){
+    var b = document.createElement("button");
+    b.className = "chip" + (scDel ? " del" : "");
+    b.textContent = p.name;
+    b.addEventListener("click", function(){
+      if (scDel) { presetDel(p.slot); return; }
+      jpost("/json/state", { ps:p.slot }).then(function(){ quietUntil = 0; pull(); });
+    });
+    sc.appendChild(b);
+  });
+  if (freeSlot()) {
+    var a = document.createElement("button");
+    a.className = "chip add";
+    a.textContent = "+";
+    a.setAttribute("aria-label", "Zapisz bieżący wygląd");
+    a.addEventListener("click", function(){
+      $("scSave").hidden = false;
+      $("scName").value = "";
+      $("scName").focus();
+    });
+    sc.appendChild(a);
+  }
+  $("scEdit").hidden = !userPresets.length;
+  $("scEdit").setAttribute("aria-pressed", scDel ? "true" : "false");
+}
+
+$("scEdit").addEventListener("click", function(){ scDel = !scDel; buildScenes(); });
+$("scOk").addEventListener("click", presetSave);
+$("scCancel").addEventListener("click", function(){ $("scSave").hidden = true; });
+$("scName").addEventListener("keydown", function(e){ if (e.key === "Enter") presetSave(); });
+
 pull();
 favLoad();
+presetsLoad();
 pollTimer = setInterval(function(){ if (!document.hidden && !CAL.on && Date.now() > quietUntil) pull(); }, 2500);
 </script>
 </body>
