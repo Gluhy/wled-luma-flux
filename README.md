@@ -127,6 +127,24 @@ Underneath, the outputs are temporarily stretched to 300 LEDs so that an LED
 past the real end can be addressed at all — which is also why this mode can't
 measure a strip longer than 300.
 
+## Saving what you like
+
+Colours, effects and palettes can be kept as favourites. In the colour picker,
+**+** saves the colour you're looking at; the chip rows under *Effect* and
+*Palette* have the same **+** for whatever is running right now. **Remove**
+turns a row into delete mode; tapping it again leaves.
+
+These live in `/favs.json` **on the lamp**, not in your browser. That matters
+more than it sounds: browser storage would give you one set of favourites on
+your phone and a different set on a laptop, and clearing site data would wipe
+them. On the lamp they're the same for everyone who opens the page. If the page
+is opened from disk instead of from the lamp, it falls back to browser storage.
+
+Effects and palettes are stored **by name**, not by number. WLED renumbers
+effects between versions, so a saved number would silently point at something
+else after an update. A saved name that a later build doesn't have shows up
+struck through rather than disappearing.
+
 ## When effects cut off at the end of a strip
 
 Effects run from one end of a segment to the other and then start over, which

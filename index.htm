@@ -230,6 +230,34 @@ select{
 .busy{position:fixed;inset:0;z-index:60;display:grid;place-items:center;
   background:rgba(16,18,22,.86);font:12px/1.6 var(--mono);color:var(--muted);
   letter-spacing:.08em;text-align:center;padding:0 24px}
+
+/* ---------- saved colours ---------- */
+.favs{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:14px}
+.favs-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+  font:10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.favs-head button{font:10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
+.favs-head button[aria-pressed="true"]{color:var(--ground);background:var(--accent);border-color:var(--accent)}
+.fav-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fav{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,.16);
+  position:relative;transition:transform .12s}
+.fav:active{transform:scale(.92)}
+.fav.del::after{content:"\00d7";position:absolute;inset:0;display:grid;place-items:center;
+  font:700 18px/1 var(--sans);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);
+  background:rgba(0,0,0,.38);border-radius:7px}
+.fav-add{width:34px;height:34px;border-radius:8px;border:1px dashed var(--line);
+  color:var(--muted);font:400 20px/1 var(--sans);display:grid;place-items:center;
+  transition:border-color .15s,color .15s}
+.fav-add:hover{border-color:var(--accent-deep);color:var(--accent)}
+.fav-hint{font:11px/1.5 var(--sans);color:var(--dim)}
+
+.blk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.mini{font:10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--line);border-radius:6px;padding:5px 9px;transition:color .15s,background .15s}
+.mini[aria-pressed="true"]{color:var(--ground);background:var(--accent);border-color:var(--accent)}
+.chip.add{border-style:dashed;padding-inline:14px}
+.chip.gone{opacity:.45;text-decoration:line-through;cursor:default}
+.chip.del{border-color:var(--dead);color:var(--dead)}
 </style>
 </head>
 <body>
@@ -276,11 +304,13 @@ select{
   <section class="rack" id="rack"></section>
 
   <section class="block">
-    <span class="eyebrow">Effect</span>
-    <div class="chips" id="fxChips" style="margin-bottom:12px"></div>
+    <div class="blk-head"><span class="eyebrow">Effect</span><button class="mini" id="fxEdit" hidden aria-pressed="false">Remove</button></div>
+    <div class="chips" id="fxChips" style="margin-bottom:16px"></div>
+    <div class="blk-head"><span class="eyebrow">Palette</span><button class="mini" id="palEdit" hidden aria-pressed="false">Remove</button></div>
+    <div class="chips" id="palChips" style="margin-bottom:12px"></div>
     <div class="grid2">
       <label class="field"><span>All effects</span><select id="fxSel"></select></label>
-      <label class="field"><span>Palette</span><select id="palSel"></select></label>
+      <label class="field"><span>All palettes</span><select id="palSel"></select></label>
     </div>
     <div class="srow" style="margin-top:16px">
       <div>
@@ -349,6 +379,14 @@ select{
     <input type="text" id="hexIn" maxlength="7" spellcheck="false" aria-label="Hex color">
   </div>
   <div class="kelvin" id="kelvin"></div>
+  <div class="favs">
+    <div class="favs-head">
+      <span>Saved colors</span>
+      <button id="favEdit" hidden aria-pressed="false">Remove</button>
+    </div>
+    <div class="fav-row" id="favRow"></div>
+  </div>
+
 </div>
 
 <script>
@@ -368,7 +406,6 @@ var effects = [], palettes = [];
 var pickTarget = 0, hsv = { h:30, s:1, v:1 };
 var quietUntil = 0, pollTimer = null, failures = 0;
 
-var FAVS = ["Solid","Breathe","Candle","Candle Multi","Fire 2012","Aurora","Lake","Palette","Twinkle","Glitter","Noise 1","Colortwinkles"];
 var SCENES = [
   { name:"Candle",   col:[255,147,41],  fx:"Candle Multi", bri:96,  sx:70,  ix:190, pal:"Default" },
   { name:"Evening",  col:[255,169,87],  fx:"Solid",        bri:140, sx:128, ix:128, pal:"Default" },
@@ -527,9 +564,7 @@ function render(){
     setH($("ixSlider"), Math.round(ref.ix/255*100));
     $("sxSlider").setAttribute("aria-valuenow", ref.sx);
     $("ixSlider").setAttribute("aria-valuenow", ref.ix);
-    Array.prototype.forEach.call($("fxChips").children, function(ch){
-      ch.setAttribute("aria-pressed", (+ch.dataset.fx === ref.fx) ? "true" : "false");
-    });
+    favMarkActive();
   }
 }
 
@@ -606,16 +641,7 @@ function buildLists(){
   effects.forEach(function(n,i){ fx.appendChild(new Option(n, i)); });
   palettes.forEach(function(n,i){ pal.appendChild(new Option(n, i)); });
 
-  var chips = $("fxChips"); chips.innerHTML = "";
-  FAVS.forEach(function(name){
-    var i = effects.indexOf(name);
-    if (i < 0) return;
-    var b = document.createElement("button");
-    b.className = "chip"; b.dataset.fx = i; b.textContent = name;
-    b.setAttribute("aria-pressed","false");
-    b.addEventListener("click", function(){ setAllSeg({ fx:i }); });
-    chips.appendChild(b);
-  });
+  favChips("fx"); favChips("pal");
 
   var sc = $("scenes"); sc.innerHTML = "";
   SCENES.forEach(function(s){
@@ -895,7 +921,163 @@ document.addEventListener("keydown", function(e){
 });
 
 
+/* ---------- saved favourites, kept on the lamp itself ---------- */
+/* localStorage would be per-browser: the same lamp would show different
+   favourites on a phone and on a laptop. A file in the ESP32's filesystem is
+   shared by everyone who opens the page, and survives clearing browser data.
+   Effects and palettes are stored by NAME, not by number: a WLED update can
+   renumber effects, and a saved number would then point somewhere else. */
+var FAV_MAX = 12;
+var FX_DEFAULT  = ["Solid","Breathe","Candle","Candle Multi","Fire 2012","Aurora",
+                   "Lake","Palette","Twinkle","Glitter","Noise 1","Colortwinkles"];
+var PAL_DEFAULT = ["Default","Fire","Ocean","Forest","Rainbow","Aurora"];
+
+var favs = { cols:null, fx:null, pal:null };
+var favDel = { cols:false, fx:false, pal:false };
+
+function favLoad(){
+  return jget("/favs.json")
+    .then(function(d){ favApply(d); })
+    .catch(function(){                      // no file yet, or opened from disk
+      var d = null;
+      try { d = JSON.parse(localStorage.getItem("lumaFavs") || "null"); } catch (e) {}
+      favApply(d);
+    })
+    .then(favRenderAll);
+}
+function favApply(d){
+  d = d || {};
+  favs.cols = d.cols || [];
+  favs.fx   = d.fx   || FX_DEFAULT.slice();
+  favs.pal  = d.pal  || PAL_DEFAULT.slice();
+}
+function favSave(){
+  var payload = { v:2, cols:favs.cols, fx:favs.fx, pal:favs.pal };
+  try { localStorage.setItem("lumaFavs", JSON.stringify(payload)); } catch (e) {}
+  var body = new FormData();
+  body.append("data", new Blob([JSON.stringify(payload)], { type:"application/json" }),
+              "/favs.json");
+  return fetch(api("/upload"), { method:"POST", body:body }).catch(function(){});
+}
+function favRenderAll(){ favColors(); favChips("fx"); favChips("pal"); }
+
+/* --- colours --- */
+function favAddColor(){
+  var c = hsv2rgb(hsv.h, hsv.s, hsv.v), h = hex(c);
+  if (favs.cols.some(function(x){ return hex(x) === h; })) return;   // already saved
+  favs.cols.unshift(c);
+  favs.cols = favs.cols.slice(0, FAV_MAX);
+  favSave(); favColors();
+}
+function favColors(){
+  if (!favs.cols) return;
+  var row = $("favRow");
+  row.innerHTML = "";
+  favs.cols.forEach(function(c, i){
+    var b = document.createElement("button");
+    b.className = "fav" + (favDel.cols ? " del" : "");
+    b.style.background = hex(c);
+    b.setAttribute("aria-label", (favDel.cols ? "Remove " : "Use ") + hex(c));
+    b.addEventListener("click", function(){
+      if (favDel.cols) {
+        favs.cols.splice(i, 1);
+        if (!favs.cols.length) favDel.cols = false;
+        favSave(); favColors();
+      } else {
+        hsv = rgb2hsv.apply(null, c);
+        pushColor();
+      }
+    });
+    row.appendChild(b);
+  });
+  if (favs.cols.length < FAV_MAX) {
+    var a = document.createElement("button");
+    a.className = "fav-add";
+    a.textContent = "+";
+    a.setAttribute("aria-label", "Save the current color");
+    a.addEventListener("click", favAddColor);
+    row.appendChild(a);
+  }
+  if (!favs.cols.length) {
+    var t = document.createElement("span");
+    t.className = "fav-hint";
+    t.textContent = "Pick a color, then + to keep it.";
+    row.appendChild(t);
+  }
+  $("favEdit").hidden = !favs.cols.length;
+  $("favEdit").setAttribute("aria-pressed", favDel.cols ? "true" : "false");
+}
+
+/* --- effects and palettes --- */
+function favList(kind){ return kind === "fx" ? effects : palettes; }
+function favChips(kind){
+  var names = favs[kind], all = favList(kind);
+  if (!names || !all.length) return;          // waiting on the lamp's lists
+  var host = $(kind === "fx" ? "fxChips" : "palChips");
+  var edit = $(kind === "fx" ? "fxEdit"  : "palEdit");
+  host.innerHTML = "";
+  names.forEach(function(name, i){
+    var idx = all.indexOf(name);
+    var b = document.createElement("button");
+    b.className = "chip" + (idx < 0 ? " gone" : "") + (favDel[kind] ? " del" : "");
+    b.textContent = name;
+    if (idx >= 0) b.dataset.idx = idx;
+    else b.title = "Not in this WLED build";             // saved under an older WLED build
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function(){
+      if (favDel[kind]) {
+        names.splice(i, 1);
+        if (!names.length) favDel[kind] = false;
+        favSave(); favChips(kind);
+        return;
+      }
+      if (idx < 0) return;
+      setAllSeg(kind === "fx" ? { fx:idx } : { pal:idx });
+    });
+    host.appendChild(b);
+  });
+  if (names.length < FAV_MAX) {
+    var a = document.createElement("button");
+    a.className = "chip add";
+    a.textContent = "+";
+    a.setAttribute("aria-label", kind === "fx" ? "Save the current effect" : "Save the current palette");
+    a.addEventListener("click", function(){ favAddName(kind); });
+    host.appendChild(a);
+  }
+  edit.hidden = !names.length;
+  edit.setAttribute("aria-pressed", favDel[kind] ? "true" : "false");
+  favMarkActive();
+}
+function favAddName(kind){
+  var seg = live()[0];
+  if (!seg || !favs[kind]) return;
+  var name = favList(kind)[kind === "fx" ? seg.fx : seg.pal];
+  if (!name || favs[kind].indexOf(name) >= 0) return;
+  favs[kind].unshift(name);
+  favs[kind] = favs[kind].slice(0, FAV_MAX);
+  favSave(); favChips(kind);
+}
+function favMarkActive(){
+  var ref = live()[0];
+  if (!ref) return;
+  [["fxChips", ref.fx], ["palChips", ref.pal]].forEach(function(pair){
+    var host = $(pair[0]);
+    if (!host) return;
+    Array.prototype.forEach.call(host.children, function(ch){
+      var on = ch.dataset.idx != null && +ch.dataset.idx === pair[1];
+      ch.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  });
+}
+
+$("favEdit").addEventListener("click", function(){ favDel.cols = !favDel.cols; favColors(); });
+$("fxEdit").addEventListener("click",  function(){ favDel.fx = !favDel.fx;   favChips("fx"); });
+$("palEdit").addEventListener("click", function(){ favDel.pal = !favDel.pal; favChips("pal"); });
+
+
+
 pull();
+favLoad();
 pollTimer = setInterval(function(){ if (!document.hidden && !CAL.on && Date.now() > quietUntil) pull(); }, 2500);
 </script>
 </body>

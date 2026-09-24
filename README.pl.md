@@ -128,6 +128,24 @@ Pod spodem wyjścia są na ten czas rozciągnięte do 300 diod, żeby dało się
 w ogóle zaadresować diodę za prawdziwym końcem taśmy — dlatego ten tryb nie
 zmierzy taśmy dłuższej niż 300 diod.
 
+## Zapisywanie tego, co lubisz
+
+Kolory, efekty i palety można zapisać jako ulubione. W panelu wyboru koloru
+**+** zapisuje kolor, na który patrzysz; rzędy chipów pod *Efekt* i *Paleta*
+mają ten sam **+** dla tego, co akurat gra. **Usuń** przełącza rząd w tryb
+kasowania, ponowne kliknięcie z niego wychodzi.
+
+Wszystko to siedzi w pliku `/favs.json` **na lampce**, a nie w przeglądarce. To
+istotniejsze, niż brzmi: pamięć przeglądarki dałaby inny zestaw ulubionych na
+telefonie i inny na laptopie, a wyczyszczenie danych strony skasowałoby je.
+Na lampce są te same dla każdego, kto otworzy stronę. Jeśli otworzysz plik
+z dysku zamiast z lampki, zadziała zapas w pamięci przeglądarki.
+
+Efekty i palety zapisywane są **po nazwie**, nie po numerze. WLED zmienia
+numerację efektów między wersjami, więc zapisany numer po aktualizacji po cichu
+wskazywałby co innego. Nazwa, której nowsza wersja nie zna, pokaże się
+przekreślona, zamiast zniknąć.
+
 ## Kiedy efekty brzydko się ucinają na końcu taśmy
 
 Efekt przebiega od jednego końca segmentu do drugiego i zaczyna od nowa, co
