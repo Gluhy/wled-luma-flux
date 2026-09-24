@@ -146,10 +146,10 @@ app show them too.
 
 ## Turning off by itself
 
-The *Sleep timer* row sets a delay — 15 to 90 minutes. The light fades down
-over the whole period rather than cutting out at the end, and a readout shows
-how long is left. **Cancel** calls it off and puts the brightness back where it
-was.
+The *Sleep timer* row sets a delay — 15 to 90 minutes. The light stays exactly
+as it is for the whole delay and then switches off; a readout shows how long is
+left, and **Cancel** calls it off. Brightness is remembered, so switching the
+lamp back on brings back the same light.
 
 The countdown runs on the lamp, not in the page, so it still happens after you
 close the browser or leave the house. It is WLED's nightlight underneath, so

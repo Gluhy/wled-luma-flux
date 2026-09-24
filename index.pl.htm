@@ -1321,32 +1321,21 @@ $("scName").addEventListener("keydown", function(e){ if (e.key === "Enter") pres
 
 /* ---------- sleep timer ---------- */
 /* This is WLED's nightlight: the countdown runs on the lamp, so it still turns
-   off after you close the page or leave the house. mode 1 fades the light down
-   over the whole period rather than cutting it at the end. */
+   off after you close the page or leave the house. */
 var TIMERS = [15, 30, 45, 60, 90];
 var nl = { on:false, dur:60, rem:-1 };
 
-var nlBriBefore = null;                 // brightness to put back if you cancel
-
 function timerStart(m){
-  if (!nl.on) nlBriBefore = S.bri;      // only on a fresh start, not a re-arm
   nl.on = true; nl.dur = m; nl.rem = m * 60;
   renderTimer();
-  send({ nl:{ on:true, dur:m, mode:1, tbri:0 } }, true);
+  // mode 0 holds the light as it is for the whole delay and then switches it
+  // off, rather than dimming the room away underneath you the entire time
+  send({ nl:{ on:true, dur:m, mode:0, tbri:0 } }, true);
 }
 function timerStop(){
   nl.on = false; nl.rem = -1;
   renderTimer();
-  // WLED leaves the light wherever the fade got to, which is a surprise when
-  // you only meant to call the timer off — so put the brightness back.
-  var patch = { nl:{ on:false } };
-  if (nlBriBefore != null && nlBriBefore > S.bri) {
-    patch.bri = nlBriBefore;
-    S.bri = nlBriBefore;
-    render();
-  }
-  nlBriBefore = null;
-  send(patch, true);
+  send({ nl:{ on:false } }, true);
 }
 function fmtLeft(sec){
   if (sec < 0) sec = 0;

@@ -147,10 +147,10 @@ i aplikacja na telefon.
 
 ## Samoczynne gaśnięcie
 
-Rząd *Wyłącznik czasowy* ustawia zwłokę — od 15 do 90 minut. Światło przygasa
-stopniowo przez cały ten czas, zamiast zgasnąć nagle na końcu, a odczyt pokazuje,
-ile zostało. **Anuluj** odwołuje timer i przywraca jasność sprzed jego
-uruchomienia.
+Rząd *Wyłącznik czasowy* ustawia zwłokę — od 15 do 90 minut. Światło świeci bez
+zmian przez cały ten czas i dopiero wtedy gaśnie; odczyt pokazuje, ile zostało,
+a **Anuluj** odwołuje timer. Jasność zostaje zapamiętana, więc ponowne włączenie
+lampki przywraca to samo światło.
 
 Odliczanie chodzi na lampce, a nie w przeglądarce, więc zadziała także po
 zamknięciu karty albo wyjściu z domu. Pod spodem to nightlight z WLED, więc ten
