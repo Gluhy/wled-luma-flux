@@ -93,21 +93,35 @@ printf "\n  Type 'yes' to go ahead: "
 read -r confirm
 [ "$confirm" = "yes" ] || die "Nothing was written. Stopped at your request."
 
-bold "Erasing"
-"$ESPTOOL" --port "$PORT" --baud 460800 erase-flash 2>&1 | tail -2 | sed 's/^/  /'
+LOG="$BUILD_DIR/last-run.log"
+
+bold "Erasing the board"
+if "$ESPTOOL" --port "$PORT" --baud 460800 erase-flash >"$LOG" 2>&1; then
+  echo "  done"
+else
+  cat "$LOG"; die "Erasing failed. The full output is above."
+fi
 
 # The WLED release image holds the application only, so it goes to 0x10000 with
 # the bootloader and partition table written separately. Flashed to 0x0 instead,
 # the board boot-loops with "invalid header".
 # The 8 MB bootloader is correct here: esptool rewrites the flash-size field in
 # its header to match --flash-size.
-bold "Writing WLED"
-"$ESPTOOL" --port "$PORT" --baud 460800 --chip esp32 write-flash -z \
+bold "Writing WLED — this takes about half a minute"
+if "$ESPTOOL" --port "$PORT" --baud 460800 --chip esp32 write-flash -z \
   --flash-mode dio --flash-freq 40m --flash-size 4MB \
   0x1000  "$BUILD_DIR/bootloader.bin" \
   0x8000  "$BUILD_DIR/partitions.bin" \
   0xe000  "$BUILD_DIR/boot_app0.bin" \
-  0x10000 "$BUILD_DIR/wled.bin" 2>&1 | grep -vE "Writing at 0x" | sed 's/^/  /'
+  0x10000 "$BUILD_DIR/wled.bin" >>"$LOG" 2>&1
+then
+  echo "  bootloader, partition table, boot selector and WLED — written"
+  verified=$(grep -c "Hash of data verified" "$LOG" || true)
+  [ "$verified" -ge 4 ] || { cat "$LOG"; die "Only $verified of 4 parts verified. The full output is above."; }
+  echo "  all four read back and verified"
+else
+  cat "$LOG"; die "Writing failed. The full output is above."
+fi
 
 bold "Done — WLED is on the board"
 cat <<'NEXT'
