@@ -1,0 +1,3 @@
+# Firmware parts are downloaded by install.sh, never committed:
+# they are other people's builds and would bloat the history.
+build/
