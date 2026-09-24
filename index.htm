@@ -286,6 +286,13 @@ select{
   color:var(--muted);white-space:nowrap}
 .saverow button#scOk{background:var(--accent);color:var(--ground);border-color:var(--accent);font-weight:700}
 .chip.muted{opacity:.35;cursor:default}
+
+/* ---------- sleep timer ---------- */
+.timer-live{display:flex;align-items:center;gap:12px;margin-top:14px;
+  font:11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.timer-rem{font:600 20px/1 var(--mono);font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em;color:var(--accent);text-transform:none;min-width:5ch}
+.timer-live .mini{margin-left:auto}
 </style>
 </head>
 <body>
@@ -362,6 +369,15 @@ select{
     <div class="blk-head"><span class="eyebrow">Scenes</span><button class="mini" id="scEdit" hidden aria-pressed="false">Remove</button></div>
     <div class="chips" id="scenes"></div>
     <div class="saverow" id="scSave" hidden><input type="text" id="scName" maxlength="24" placeholder="Name this look" aria-label="Name this look"><button id="scOk">Save</button><button id="scCancel">Cancel</button></div>
+  </section>
+
+  <section class="block">
+    <span class="eyebrow">Sleep timer</span>
+    <div class="chips" id="timerRow"></div>
+    <div class="timer-live" id="timerLive" hidden>
+      <span>Turns off in</span><span class="timer-rem" id="timerRem">--:--</span>
+      <button class="mini" id="timerStop">Cancel</button>
+    </div>
   </section>
 
   <section class="block">
@@ -548,6 +564,11 @@ function apply(st, force){
   if (!force && Date.now() < quietUntil) return;
   S.on  = !!st.on;
   S.bri = st.bri || 0;
+  if (st.nl) {
+    nl.on  = !!st.nl.on;
+    nl.dur = st.nl.dur || nl.dur;
+    nl.rem = (st.nl.rem == null ? -1 : st.nl.rem);
+  }
   if (st.seg) S.seg = st.seg;
   render();
 }
@@ -565,6 +586,8 @@ function render(){
   $("briVal").textContent = pct;
   setH($("masterBri"), pct);
   $("masterBri").setAttribute("aria-valuenow", pct);
+
+  renderTimer();
 
   var segs = live();
   if (segs.length !== rackBuilt) { buildRack(segs); rackBuilt = segs.length; }
@@ -1295,6 +1318,74 @@ $("scEdit").addEventListener("click", function(){ scDel = !scDel; buildScenes();
 $("scOk").addEventListener("click", presetSave);
 $("scCancel").addEventListener("click", function(){ $("scSave").hidden = true; });
 $("scName").addEventListener("keydown", function(e){ if (e.key === "Enter") presetSave(); });
+
+/* ---------- sleep timer ---------- */
+/* This is WLED's nightlight: the countdown runs on the lamp, so it still turns
+   off after you close the page or leave the house. mode 1 fades the light down
+   over the whole period rather than cutting it at the end. */
+var TIMERS = [15, 30, 45, 60, 90];
+var nl = { on:false, dur:60, rem:-1 };
+
+var nlBriBefore = null;                 // brightness to put back if you cancel
+
+function timerStart(m){
+  if (!nl.on) nlBriBefore = S.bri;      // only on a fresh start, not a re-arm
+  nl.on = true; nl.dur = m; nl.rem = m * 60;
+  renderTimer();
+  send({ nl:{ on:true, dur:m, mode:1, tbri:0 } }, true);
+}
+function timerStop(){
+  nl.on = false; nl.rem = -1;
+  renderTimer();
+  // WLED leaves the light wherever the fade got to, which is a surprise when
+  // you only meant to call the timer off — so put the brightness back.
+  var patch = { nl:{ on:false } };
+  if (nlBriBefore != null && nlBriBefore > S.bri) {
+    patch.bri = nlBriBefore;
+    S.bri = nlBriBefore;
+    render();
+  }
+  nlBriBefore = null;
+  send(patch, true);
+}
+function fmtLeft(sec){
+  if (sec < 0) sec = 0;
+  var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  var mm = (h && m < 10 ? "0" : "") + m;
+  return (h ? h + ":" : "") + mm + ":" + (s < 10 ? "0" : "") + s;
+}
+function buildTimer(){
+  var row = $("timerRow");
+  row.innerHTML = "";
+  TIMERS.forEach(function(m){
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.dataset.min = m;
+    b.textContent = m + " min";
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function(){ timerStart(m); });
+    row.appendChild(b);
+  });
+  renderTimer();
+}
+function renderTimer(){
+  var row = $("timerRow");
+  if (!row) return;
+  var running = nl.on && nl.rem > 0;
+  Array.prototype.forEach.call(row.children, function(c){
+    var on = running && +c.dataset.min === nl.dur;
+    c.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  $("timerLive").hidden = !running;
+  if (running) $("timerRem").textContent = fmtLeft(nl.rem);
+}
+
+$("timerStop").addEventListener("click", timerStop);
+buildTimer();
+/* tick locally between polls so the countdown doesn't jump in 2.5s steps */
+setInterval(function(){
+  if (nl.on && nl.rem > 0) { nl.rem--; renderTimer(); }
+}, 1000);
 
 pull();
 favLoad();

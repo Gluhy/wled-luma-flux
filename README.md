@@ -144,6 +144,17 @@ Names and the order live in `/favs.json` on the lamp, alongside the saved
 colours. Names are also pushed to WLED itself, so the stock panel and the phone
 app show them too.
 
+## Turning off by itself
+
+The *Sleep timer* row sets a delay — 15 to 90 minutes. The light fades down
+over the whole period rather than cutting out at the end, and a readout shows
+how long is left. **Cancel** calls it off and puts the brightness back where it
+was.
+
+The countdown runs on the lamp, not in the page, so it still happens after you
+close the browser or leave the house. It is WLED's nightlight underneath, so
+the phone app shows and controls the same timer.
+
 ## Saving a look
 
 **+** at the end of the *Scenes* row saves everything on screen right now —
