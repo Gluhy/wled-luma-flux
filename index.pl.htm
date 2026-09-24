@@ -262,7 +262,11 @@ select{
 .rack-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding-top:16px;border-top:1px solid var(--line-soft)}
 .rack-head+.rack{border-top:none;padding-top:10px}
-.ch-name{cursor:default}
+.ch-name{cursor:pointer;background:none;border:none;padding:2px 0;width:100%;
+  border-radius:6px;transition:color .15s,background .15s}
+.ch-name:hover{color:var(--accent);background:rgba(255,180,84,.07)}
+/* the sheet must never outgrow a short screen with no way to reach the top */
+.sheet{max-height:92vh;overflow-y:auto;overscroll-behavior:contain}
 .grab{position:absolute;inset:-4px;border-radius:12px;border:1px dashed var(--line);
   background:rgba(255,180,84,.04);cursor:pointer;z-index:5}
 .grab:hover{border-color:var(--accent-deep)}
@@ -608,7 +612,7 @@ function buildRack(segs){
     var d = document.createElement("div");
     d.className = "ch";
     d.innerHTML =
-      '<div class="ch-name">' + esc(favName(si, s)) + '</div>' +
+      '<button class="ch-name" id="nm' + si + '">' + esc(favName(si, s)) + '</button>' +
       '<button class="swatch" id="sw' + si + '" aria-label="Kolor: ' + esc(favName(si, s)) + '"></button>' +
       '<div class="fader" id="fd' + si + '" role="slider" tabindex="0" aria-label="Jasność: ' + esc(favName(si, s)) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' +
         '<div class="track"><div class="fill"></div></div><div class="knob"></div>' +
@@ -628,6 +632,7 @@ function buildRack(segs){
     }
 
     $("sw" + si).addEventListener("click", function(){ openPicker(si); });
+    $("nm" + si).addEventListener("click", function(){ openPicker(si, true); });
     $("bt" + si).addEventListener("click", function(){
       var seg = live()[si]; if (!seg) return;
       seg.on = !seg.on; render();
@@ -747,7 +752,7 @@ function pushColor(){
   seg.col[0] = c; seg.on = true; render();
   send({ seg:[{ id:seg.id, col:[c], on:true }] });
 }
-function openPicker(i){
+function openPicker(i, toName){
   pickTarget = i;
   var seg = live()[i]; if (!seg) return;
   hsv = rgb2hsv.apply(null, segColor(seg));
@@ -757,7 +762,8 @@ function openPicker(i){
   $("sheet").hidden = false; $("scrim").hidden = false;
   svc.width = svc.clientWidth || 340;
   pushColor();
-  $("sheetClose").focus();
+  if (toName) { $("nameIn").focus(); $("nameIn").select(); }
+  else $("sheetClose").focus();
 }
 function closePicker(){ $("sheet").hidden = true; $("scrim").hidden = true; }
 
