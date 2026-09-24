@@ -130,21 +130,19 @@ zmierzy taśmy dłuższej niż 300 diod.
 
 ## Jak poznać, która taśma jest która
 
-Pięć taśm w tej lampie jest rozmieszczonych jak oczka na piątce kostki — cztery
-w rogach, jedno w środku — więc sterowanie wygląda tak samo. Nie ma wtedy czego
-pamiętać: suwak w lewym górnym rogu to taśma w lewym górnym rogu.
-
-Pomagają w tym trzy rzeczy:
+Taśmy stoją w rzędzie, w kolejności, którą sam ustawiasz — dzięki temu rząd na
+ekranie można dopasować do tego, jak taśmy leżą naprawdę. Pomagają w tym trzy
+rzeczy:
 
 - **Rozmieść** (nad taśmami) włącza tryb zamiany. Dotykasz dwóch taśm, a one
-  zamieniają się miejscami — aż ekran będzie zgodny z lampą przed Tobą.
+  zamieniają się miejscami; ponowne kliknięcie **Rozmieść** wychodzi z trybu.
 - **Mrugnij** (w panelu koloru danej taśmy) mruga tą jedną taśmą trzy razy na
   biało, żebyś zobaczył, o którą fizycznie chodzi.
 - **Zmień** (ten sam panel) nadaje jej własną nazwę — „lewa przednia",
   „kręgosłup", cokolwiek pasuje do Twojej konstrukcji.
 
-Nazwy i pozycje siedzą w `/favs.json` na lampce, obok zapisanych kolorów. Nazwy
-trafiają dodatkowo do samego WLED, więc pokazuje je też wbudowany panel
+Nazwy i kolejność siedzą w `/favs.json` na lampce, obok zapisanych kolorów.
+Nazwy trafiają dodatkowo do samego WLED, więc pokazuje je też wbudowany panel
 i aplikacja na telefon.
 
 ## Zapisywanie wyglądu

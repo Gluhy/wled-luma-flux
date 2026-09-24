@@ -129,21 +129,18 @@ measure a strip longer than 300.
 
 ## Knowing which strip is which
 
-The five strips in this build sit like the pips on a die's five face — four
-corners and one in the middle — so the controls are laid out the same way.
-There is then nothing to memorise: the fader in the top-left corner is the
-strip in the top-left corner.
-
-Three things help you set that up:
+The strips sit in a row, in whatever order you put them in, so the row on
+screen can be made to match the order they physically sit in. Three things help
+you set that up:
 
 - **Arrange** (above the strips) turns on swap mode. Tap two strips and they
-  trade places, until the screen matches the lamp in front of you.
+  trade places; tap **Arrange** again to leave.
 - **Blink** (in a strip's colour panel) flashes that one strip white three
   times, so you can see which physical strip you're looking at.
 - **Rename** (same panel) gives it a name of your own — "front left", "spine",
   whatever fits your build.
 
-Names and positions live in `/favs.json` on the lamp, alongside the saved
+Names and the order live in `/favs.json` on the lamp, alongside the saved
 colours. Names are also pushed to WLED itself, so the stock panel and the phone
 app show them too.
 
