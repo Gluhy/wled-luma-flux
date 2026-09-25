@@ -158,6 +158,10 @@ back.
 Tapping a chip that is already on turns it off again: an effect goes back to
 *Solid*, a palette back to *Default*. Both mean "nothing on top of my colours".
 
+Those two are always in their rows, shown with a dashed outline, even after you
+delete them from the saved list — they are the way back, and a row without one
+is a row you can't get out of.
+
 ## Turning off by itself
 
 The *Sleep timer* row sets a delay — 15 to 90 minutes. The light stays exactly

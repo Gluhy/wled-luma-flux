@@ -301,6 +301,9 @@ select{
 .pal-note button{margin-left:auto;padding:7px 12px;border-radius:7px;
   border:1px solid var(--accent-deep);color:var(--accent);
   font:10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+
+.chip.pinned{border-style:dashed;border-color:var(--line)}
+.chip.pinned[aria-pressed="true"]{border-style:solid}
 </style>
 </head>
 <body>
@@ -1118,6 +1121,23 @@ function favChips(kind){
   var host = $(kind === "fx" ? "fxChips" : "palChips");
   var edit = $(kind === "fx" ? "fxEdit"  : "palEdit");
   host.innerHTML = "";
+  // Solid and Default are the way back to "nothing on top of my colours", and
+  // both can be deleted from the saved row like any other chip — after which
+  // there is no route back to them at all. Keep one pinned when it is missing.
+  var neutral = kind === "fx" ? "Solid" : "Default";
+  var nIdx = all.indexOf(neutral);
+  if (nIdx >= 0 && names.indexOf(neutral) < 0) {
+    var nb = document.createElement("button");
+    nb.className = "chip pinned";
+    nb.textContent = neutral;
+    nb.dataset.idx = nIdx;
+    nb.setAttribute("aria-pressed", "false");
+    nb.addEventListener("click", function(){
+      setAllSeg(kind === "fx" ? { fx:nIdx } : { pal:nIdx });
+    });
+    host.appendChild(nb);
+  }
+
   names.forEach(function(name, i){
     var idx = all.indexOf(name);
     var b = document.createElement("button");

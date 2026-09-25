@@ -159,6 +159,10 @@ Dotknięcie kafelka, który już jest włączony, wyłącza go: efekt wraca do
 *Solid*, paleta do *Default*. Jedno i drugie znaczy „nic na wierzchu moich
 kolorów".
 
+Te dwie pozycje są zawsze w swoich rzędach, obrysowane kreskowaną ramką, nawet
+gdy skasujesz je z zapisanej listy — to jedyne wyjście z powrotem, a rząd bez
+niego jest rzędem bez wyjścia.
+
 ## Samoczynne gaśnięcie
 
 Rząd *Wyłącznik czasowy* ustawia zwłokę — od 15 do 90 minut. Światło świeci bez
