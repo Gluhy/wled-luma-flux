@@ -155,6 +155,9 @@ drawing from the palette.
 colour panel says so when a palette is in the way, with a button to switch
 back.
 
+Tapping a chip that is already on turns it off again: an effect goes back to
+*Solid*, a palette back to *Default*. Both mean "nothing on top of my colours".
+
 ## Turning off by itself
 
 The *Sleep timer* row sets a delay — 15 to 90 minutes. The light stays exactly

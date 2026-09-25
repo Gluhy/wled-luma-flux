@@ -155,6 +155,10 @@ wartość, ale nic widocznego — efekt dalej rysuje z palety.
 koloru mówi o tym wprost, gdy paleta stoi na przeszkodzie, i daje przycisk do
 przełączenia.
 
+Dotknięcie kafelka, który już jest włączony, wyłącza go: efekt wraca do
+*Solid*, paleta do *Default*. Jedno i drugie znaczy „nic na wierzchu moich
+kolorów".
+
 ## Samoczynne gaśnięcie
 
 Rząd *Wyłącznik czasowy* ustawia zwłokę — od 15 do 90 minut. Światło świeci bez

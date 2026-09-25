@@ -1134,7 +1134,12 @@ function favChips(kind){
         return;
       }
       if (idx < 0) return;
-      setAllSeg(kind === "fx" ? { fx:idx } : { pal:idx });
+      // Tapping the one that is already on takes you back to neutral: Solid for
+      // effects, Default for palettes. Both mean "nothing on top of my colours".
+      var ref = live()[0];
+      var cur = ref ? (kind === "fx" ? ref.fx : ref.pal) : -1;
+      var next = (cur === idx) ? 0 : idx;
+      setAllSeg(kind === "fx" ? { fx:next } : { pal:next });
     });
     host.appendChild(b);
   });
