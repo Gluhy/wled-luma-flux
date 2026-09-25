@@ -293,6 +293,14 @@ select{
 .timer-rem{font:600 20px/1 var(--mono);font-variant-numeric:tabular-nums;
   letter-spacing:-.01em;color:var(--accent);text-transform:none;min-width:5ch}
 .timer-live .mini{margin-left:auto}
+
+.pal-note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;
+  padding:10px 12px;border-radius:9px;border:1px solid rgba(255,180,84,.3);
+  background:rgba(255,180,84,.07);font:12px/1.5 var(--sans);color:var(--muted)}
+.pal-note b{color:var(--text);font-weight:600}
+.pal-note button{margin-left:auto;padding:7px 12px;border-radius:7px;
+  border:1px solid var(--accent-deep);color:var(--accent);
+  font:10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -417,6 +425,7 @@ select{
     <h2 id="sheetTitle">Color</h2>
     <button class="close" id="sheetClose">Done</button>
   </header>
+  <p class="pal-note" id="palNote" hidden><span>Palette <b id="palNoteName"></b> is on, so effects take their colours from it rather than from here.</span><button id="palNoteUse">Use my colors</button></p>
   <canvas id="sv" width="340" height="168"></canvas>
   <div class="hue" id="hue" role="slider" tabindex="0" aria-label="Hue" aria-valuemin="0" aria-valuemax="359" aria-valuenow="30">
     <div class="track"></div><div class="knob" style="left:0%"></div>
@@ -508,25 +517,36 @@ function send(patch, immediate){
   queued = queued ? deepMerge(queued, patch) : patch;
   if (sending) return;
   sending = true;
-  setTimeout(flush, immediate ? 0 : 70);
+  setTimeout(flush, immediate ? 0 : 40);
 }
 function deepMerge(a,b){
   for (var k in b) {
-    if (k === "seg") { a.seg = (a.seg||[]).filter(function(s){ return !b.seg.some(function(t){ return t.id===s.id; }); }).concat(b.seg); }
-    else a[k] = b[k];
+    if (k !== "seg") { a[k] = b[k]; continue; }
+    // Merge field by field. Replacing the whole entry loses whatever else was
+    // queued for that segment: pick a colour, tap an effect a moment later,
+    // and the colour never left the browser.
+    a.seg = a.seg || [];
+    b.seg.forEach(function(t){
+      var cur = null, i;
+      for (i = 0; i < a.seg.length; i++) if (a.seg[i].id === t.id) { cur = a.seg[i]; break; }
+      if (!cur) { a.seg.push(t); return; }
+      for (var f in t) cur[f] = t[f];
+    });
   }
   return a;
 }
 function flush(){
   var body = queued; queued = null;
   if (!body) { sending = false; return; }
-  body.v = true;
+  // Deliberately no "v":true and no applying what comes back. The echoed state
+  // is a request old, so writing it over the screen mid-drag snaps the fader
+  // back to where it was a moment ago — which reads as lag. What you are
+  // holding is the truth until the next poll, which quietUntil already delays.
   fetch(api("/json/state"), {
     method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body)
-  }).then(function(r){ return r.json(); })
-    .then(function(st){ markUp(); apply(st, true); })
+  }).then(markUp)
     .catch(markDown)
-    .then(function(){ sending = false; if (queued) { sending = true; setTimeout(flush, 70); } });
+    .then(function(){ sending = false; if (queued) { sending = true; setTimeout(flush, 40); } });
 }
 
 function markUp(){
@@ -620,6 +640,7 @@ function render(){
     $("sxSlider").setAttribute("aria-valuenow", ref.sx);
     $("ixSlider").setAttribute("aria-valuenow", ref.ix);
     favMarkActive();
+    palNote();
   }
 }
 
@@ -785,6 +806,7 @@ function openPicker(i, toName){
   $("sheet").hidden = false; $("scrim").hidden = false;
   svc.width = svc.clientWidth || 340;
   pushColor();
+  palNote();
   if (toName) { $("nameIn").focus(); $("nameIn").select(); }
   else $("sheetClose").focus();
 }
@@ -1375,6 +1397,22 @@ buildTimer();
 setInterval(function(){
   if (nl.on && nl.rem > 0) { nl.rem--; renderTimer(); }
 }, 1000);
+
+/* Most effects draw from the palette, not from the segment colour. With any
+   palette but Default, picking a colour here changes nothing you can see —
+   so say that out loud instead of letting it look broken. */
+function palNote(){
+  var note = $("palNote");
+  if (!note) return;
+  var ref = live()[0];
+  var usingPalette = ref && ref.pal > 0 && palettes.length;
+  note.hidden = !usingPalette;
+  if (usingPalette) $("palNoteName").textContent = palettes[ref.pal] || ("#" + ref.pal);
+}
+$("palNoteUse").addEventListener("click", function(){
+  setAllSeg({ pal:0 });
+  palNote();
+});
 
 pull();
 favLoad();

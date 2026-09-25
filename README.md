@@ -144,6 +144,17 @@ Names and the order live in `/favs.json` on the lamp, alongside the saved
 colours. Names are also pushed to WLED itself, so the stock panel and the phone
 app show them too.
 
+## When an effect ignores your colour
+
+Most WLED effects take their colours from the **palette**, not from the colour
+you set on a strip. With any palette other than *Default* selected, picking a
+colour changes the stored value but nothing you can see — the effect keeps
+drawing from the palette.
+
+*Default* is the palette that means "use this segment's own colours". The
+colour panel says so when a palette is in the way, with a button to switch
+back.
+
 ## Turning off by itself
 
 The *Sleep timer* row sets a delay — 15 to 90 minutes. The light stays exactly

@@ -145,6 +145,16 @@ Nazwy i kolejność siedzą w `/favs.json` na lampce, obok zapisanych kolorów.
 Nazwy trafiają dodatkowo do samego WLED, więc pokazuje je też wbudowany panel
 i aplikacja na telefon.
 
+## Kiedy efekt ignoruje Twój kolor
+
+Większość efektów WLED bierze kolory z **palety**, a nie z koloru ustawionego na
+taśmie. Przy palecie innej niż *Default* wybranie koloru zmienia zapisaną
+wartość, ale nic widocznego — efekt dalej rysuje z palety.
+
+*Default* to paleta, która znaczy „użyj własnych kolorów tego segmentu". Panel
+koloru mówi o tym wprost, gdy paleta stoi na przeszkodzie, i daje przycisk do
+przełączenia.
+
 ## Samoczynne gaśnięcie
 
 Rząd *Wyłącznik czasowy* ustawia zwłokę — od 15 do 90 minut. Światło świeci bez
